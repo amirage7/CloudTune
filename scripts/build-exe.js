@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs/promises');const path=require('node:path');const crypto=require('node:crypto');const {spawnSync}=require('node:child_process');
+async function main(){const root=path.resolve(__dirname,'..');const version=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8')).version;if(!/^\d+\.\d+\.\d+$/.test(version))throw new Error('Invalid app version');
+ const payload=path.join(root,'release',`CloudTune-${version}-Windows-x64.zip`);const hash=crypto.createHash('sha256').update(await fs.readFile(payload)).digest('hex');const exe=path.join(root,'release',`CloudTune-${version}-Windows-x64.exe`);const info=path.join(root,'.packaging/ExeBuildInfo.cs');
+ await fs.writeFile(info,`[assembly: System.Reflection.AssemblyTitle("CloudTune")]\n[assembly: System.Reflection.AssemblyProduct("CloudTune")]\n[assembly: System.Reflection.AssemblyDescription("CloudTune 本地音乐入库助手")]\n[assembly: System.Reflection.AssemblyVersion("${version}.0")]\n[assembly: System.Reflection.AssemblyFileVersion("${version}.0")]\ninternal static class BuildInfo { internal const string Version = "${version}"; internal const string Hash = "${hash}"; }\n`);
+ const compiler=path.join(process.env.SystemRoot||'C:\\Windows','Microsoft.NET/Framework64/v4.0.30319/csc.exe');
+ const built=spawnSync(compiler,['/nologo','/target:winexe','/platform:x64','/optimize+','/utf8output','/out:'+exe,'/resource:'+payload+',CloudTune.Payload','/reference:System.Windows.Forms.dll','/reference:System.Drawing.dll','/reference:System.IO.Compression.dll','/reference:System.IO.Compression.FileSystem.dll',path.join(__dirname,'CloudTuneExe.cs'),info],{windowsHide:true,encoding:'utf8'});
+ if(built.status!==0)throw new Error(built.stdout+'\n'+built.stderr);const exeHash=crypto.createHash('sha256').update(await fs.readFile(exe)).digest('hex');await fs.writeFile(exe+'.sha256',exeHash+'  '+path.basename(exe)+'\n');console.log(JSON.stringify({exe,bytes:(await fs.stat(exe)).size,sha256:exeHash}));
+}
+main().catch(e=>{console.error(e.message);process.exitCode=1;});

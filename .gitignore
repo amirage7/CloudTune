@@ -1,0 +1,17 @@
+node_modules/
+data/
+.env
+.env.*
+*.log
+*.mp3
+*.m4a
+*.flac
+data/tracks/*
+!data/tracks/.gitkeep
+data/library.json
+data/settings.json
+data/session.json
+.packaging/
+release/
+runtime/
+tools/*.exe

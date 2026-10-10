@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>CloudTune — 让好音乐留在你的云盘</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="logo"><span class="logo-icon">◈</span><span>Cloud<span class="logo-accent">Tune</span><small>Personal Music Cloud</small></span></div>
+      <div class="side-label">工作空间</div>
+      <nav class="nav-menu" aria-label="主导航">
+        <button type="button" data-view="search" class="nav-item active"><span class="nav-symbol">⌕</span> 发现音乐 <span class="nav-arrow">›</span></button>
+        <button type="button" data-view="library" class="nav-item"><span class="nav-symbol">♫</span> 我的音乐库 <span class="nav-count" id="side-count">0</span></button>
+        <button type="button" data-view="account" class="nav-item"><span class="nav-symbol">☁</span> 网易云同步</button><button type="button" data-view="tasks" class="nav-item">任务中心 <span id="nav-task-count" class="nav-count">0</span></button>
+      </nav>
+      <div class="side-label gap-top">快速操作</div>
+      <div class="shortcut-box" id="dropzone"><span class="shortcut-icon">↥</span><strong>导入本地音频</strong><span>拖拽文件到这里<br>或点击选择文件</span><button id="choose-file" type="button" class="text-btn">选择文件 <span>↗</span></button></div>
+      <input id="files" type="file" accept="audio/*,.mp3,.flac,.ogg,.wav,.m4a,.aac" multiple hidden />
+      <div class="sidebar-bottom"><span class="online-dot"></span> 本地运行 · 数据保存在电脑<div class="bottom-divider"></div><button type="button" data-view="settings" class="settings-link">⚙　设置和音源配置 <span>›</span></button></div>
+    </aside>
+    <main class="main-area">
+      <header class="topbar"><div class="breadcrumbs">个人工作空间 <span>/</span> <strong id="breadcrumbs-current">发现音乐</strong></div><div class="top-actions"><span class="top-chip">LOCAL · V0.7.4</span><button type="button" id="top-cloud" class="cloud-pill"><span class="online-dot off" id="top-dot"></span><span id="top-cloud-label">尚未连接云盘</span><span>↗</span></button></div></header>
+      <div class="page-content" id="search-view">
+ <section class="discovery-heading"><h1>找到你想收藏的那个版本。</h1><p>搜索、试听、选择音源，再一键整理到你的网易云。</p><div class="searchbar"><input id="search-input" type="search" placeholder="歌名、歌手或 B站完整视频链接" autocomplete="off" aria-label="搜索歌曲或音源链接"><button id="search-btn" type="button">搜索音乐</button></div><div id="recent-searches" class="recent-searches"></div></section>
+ <section id="target-song" class="target-song hidden" aria-label="目标歌曲"><h2>目标歌曲</h2><p id="target-description">识别结果待确认</p><div id="target-candidates" class="metadata-suggestions"></div></section>
+ <div class="section-head"><h2>优先音源 <span class="count" id="result-count">—</span></h2><span id="recommendation-note">最多展示三条，按匹配线索排序</span></div>
+ <div id="version-filters" class="result-filters" aria-label="版本筛选"><button class="filter-btn active" data-version="original">原版相关</button><button class="filter-btn" data-version="live">Live</button><button class="filter-btn" data-version="cover">翻唱</button><button class="filter-btn" data-version="instrumental">伴奏</button><button class="filter-btn" data-version="remix">Remix</button><button class="filter-btn" data-version="unknown">待确认</button><button class="filter-btn" data-version="all">全部版本</button></div>
+ <div class="result-filters" id="result-filters" aria-label="筛选搜索结果">
+          <button type="button" class="filter-btn active" data-filter="usable">可处理资源 <span id="filter-count-usable">0</span></button>
+          <button type="button" class="filter-btn" data-filter="all">全部 <span id="filter-count-all">0</span></button>
+          <button type="button" class="filter-btn" data-filter="audio">可下载音频 <span id="filter-count-audio">0</span></button>
+          <button type="button" class="filter-btn" data-filter="bilibili">B站视频 <span id="filter-count-bilibili">0</span></button>
+          <button type="button" class="filter-btn" data-filter="catalog">其他线索 <span id="filter-count-catalog">0</span></button>
+        </div><div id="results-message" class="notice" hidden></div>
+        <div id="search-results" class="results"><div class="empty-state"><h3>从一首歌开始</h3><p>搜索后先试听候选，明确选择再入库。不会因为点击试听就下载或上传。</p></div></div>
+ <button id="show-more-results" class="outline-btn hidden" type="button">展开更多音源</button>
+ <details class="advanced-tools"><summary>其他来源与手动导入</summary><section class="bili-panel" aria-label="B站搜索入口">
+          <div class="bili-top"><div class="bili-emblem">▣</div><div><h3>B站搜歌与 MP3 转换</h3><p>找到你有权保存的视频后，可在本机提取音轨并转成 MP3，保存到音乐库并同步。</p></div><span class="bili-indicator" id="bili-search-status">等待搜索</span></div>
+          <div id="bili-links" class="bili-shortcuts"><span class="bili-muted">输入歌名后显示 B站精准搜索链接</span></div>
+          <div class="bili-convert">
+  <div class="bili-convert-heading"><strong>粘贴 B站视频链接 · 获取 MP3</strong><span id="bili-tools-status">正在检测转换组件…</span></div>
+  <input id="bili-import-url" type="url" autocomplete="off" spellcheck="false" placeholder="https://www.bilibili.com/video/BVxxxxxxxxxx/" aria-label="B站视频链接" />
+  <div class="bili-convert-info"><input id="bili-import-title" type="text" placeholder="歌曲标题（上传前须确认）" aria-label="歌曲标题" maxlength="100"/><input id="bili-import-artist" type="text" placeholder="歌手（上传前须确认）" aria-label="歌手或创作者" maxlength="80" /></div>
+  <div class="bili-convert-actions"><button id="bili-recognize" class="small-btn secondary" type="button">⌕ 自动识别歌名 / 歌手 / 封面</button><button id="bili-import-btn" class="small-btn" type="button">↓ 转换并保存 MP3</button><button id="bili-import-sync" class="small-btn secondary" type="button">☁ 转换并同步网易云</button></div>
+  <p id="bili-recognition-status" class="bili-note" role="status">根据视频资料联网匹配，先自动填写候选信息，再由你修改确认。</p><div id="bili-recognition-candidates" class="metadata-suggestions"></div>
+  <div id="bili-recognition-sources" class="bili-convert-actions"></div>
+  <p class="bili-note">请仅下载和保存你有相应权限的音轨。无需重复勾选确认。使用 yt-dlp 与 FFmpeg 在本机转换；需安装组件，请见<a href="#bili-deps" id="bili-deps-link"> 设置说明</a>。无法处理需要 DRM 破解、付费或绕过登录限制的内容。</p>
+</div>
+        </section>
+        <section class="external-wrap"><h3>跨平台继续搜索 <span>仅打开来源，不保证可下载</span></h3><div id="external-searches" class="external-searches">搜索后会显示更多网站入口</div></section><div class="row-actions"><button id="select-all" class="ghost-btn" type="button" disabled>全选可下载音频</button><button id="batch-btn" class="outline-btn" type="button" disabled>保存已选到本地</button></div></details>
+ </div>
+ <div class="page-content subpage hidden" id="tasks-view"><div class="subpage-head"><h1>任务中心</h1><p>本地保存、云盘核验和喜欢核验分别记录。失败后从已保存的文件继续。</p></div><div id="task-list" class="results"></div></div>
+      <div class="page-content subpage hidden" id="library-view"><div class="subpage-head"><div class="eyebrow">COLLECTION</div><h1>我的音乐库</h1><p>下载或导入的歌曲保存在你的电脑上。上传前可修正歌名、歌手和专辑；上传后自动尝试加入「我喜欢的音乐」。</p></div><div class="toolbar"><span id="library-stats">共 0 首音乐</span><button id="library-like-pending" class="outline-btn" type="button">♥ 给已有云盘歌曲补喜欢</button><button id="library-refresh" class="outline-btn" type="button">↻ 刷新</button></div><div id="library-list" class="results"></div></div>
+      <div class="page-content subpage hidden" id="account-view"><div class="subpage-head"><div class="eyebrow">NETEASE CLOUD</div><h1>连接网易云音乐</h1><p>使用网易云音乐 App 扫码登录。登录成功后会加密保存在当前 Windows 用户的电脑上，下次启动自动恢复；会话过期时需重新登录。</p></div><div class="account-grid"><div class="big-panel"><div class="panel-title">云盘连接状态</div><div class="account-status-icon">☁</div><h3 id="account-name">尚未连接网易云音乐</h3><p id="account-detail">扫码登录后，即可把音乐库中的文件上传到你的私人音乐云盘。</p><button id="account-login" class="primary-btn" type="button">生成登录二维码 ↗</button><button id="account-logout" class="outline-btn hidden" type="button">退出连接</button></div><div class="big-panel instructions"><div class="panel-title">使用说明</div><div class="instruction-row"><span>01</span><p>打开手机上的网易云音乐 App</p></div><div class="instruction-row"><span>02</span><p>使用扫一扫扫描本页面二维码</p></div><div class="instruction-row"><span>03</span><p>在手机上确认授权</p></div><div class="instruction-row"><span>04</span><p>前往音乐库，先「编辑信息」，再点击「上传云盘」</p></div><div class="warning">第三方网易云接口的可用性可能因平台更新而改变。登录记录仅供当前 Windows 用户在本机恢复；退出连接会清除保存的登录。</div></div></div><div id="session-panel" class="session-panel"><h3>扫码失败？试试网页登录会话连接</h3><p>仅用于你自己的账号。先在 <a href="https://music.163.com/" target="_blank" rel="noopener noreferrer">网易云官方网站 ↗</a> 登录，再在浏览器开发者工具的 Application / 应用 → Cookies → music.163.com 中找到 <code>MUSIC_U</code>，只复制这一项到下方。仅提交到本机 127.0.0.1，验证成功后加密保存；点击退出连接可清除。</p><div class="session-control"><input id="session-cookie" type="password" autocomplete="off" spellcheck="false" placeholder="MUSIC_U=你的会话值（只在自己电脑输入）"/><button class="primary-btn" id="session-connect" type="button">验证并连接</button></div><p class="session-warning">登录 Cookie 相当于账号通行证。不要发到聊天、截图、网盘或陌生网站，也不要在公共电脑使用。会话可能失效，且第三方上传接口仍可能被网易云限制。</p><div id="session-error" role="status"></div></div><div class="cloud-list-wrap"><div class="section-head"><h2>云盘最近的歌曲</h2><button id="cloud-refresh" class="outline-btn">获取列表</button></div><div id="cloud-list" class="cloud-list-placeholder">连接账号后可查看云盘前 50 首歌曲。</div></div></div>
+      <div class="page-content subpage hidden" id="settings-view"><div class="subpage-head"><div class="eyebrow">SETTINGS</div><h1>偏好与音源设置</h1><p>本地管理搜索服务。开放音源搜索与 B站音频转换。只有取得下载保存权限的内容可以转换。</p></div><div class="settings-card" id="bili-deps"><div class="settings-icon">⚙</div><div class="settings-main"><h3>B站 MP3 转换组件</h3><p>运行状态：<strong id="bili-tools-detail">检查中…</strong>。需要 yt-dlp 与 FFmpeg，CloudTune 不会自动安装第三方可执行程序，也不需要你的 B站登录凭证。</p><p>在 Windows PowerShell 中安装：</p><pre class="install-code">winget install --source winget --id yt-dlp.yt-dlp
+winget install --source winget --id Gyan.FFmpeg</pre><p>安装后重启 CloudTune。或从 <a href="https://github.com/yt-dlp/yt-dlp/releases" target="_blank" rel="noreferrer">yt-dlp 官方发布页 ↗</a> 下载 yt-dlp.exe，从 <a href="https://www.gyan.dev/ffmpeg/builds/" target="_blank" rel="noreferrer">FFmpeg 构建页 ↗</a> 获取 ffmpeg.exe、ffprobe.exe，放到项目 <code>tools/</code> 文件夹。MP3 的码率无法超过原视频音质。</p><button id="bili-tools-refresh" type="button" class="outline-btn">↻ 重新检测组件</button></div></div><div class="settings-card"><div class="settings-icon">♥</div><div class="settings-main"><h3>自动加入「我喜欢的音乐」</h3><p>每次成功上传云盘后，尝试把同一首云盘歌曲加入当前网易云账号的喜欢列表，并重新读取喜欢列表核验。无法定位歌曲 ID 或验证失败会显示「待核实」，可从音乐库单独重试。</p><label class="settings-toggle"><input id="auto-like" type="checkbox" checked /> 上传成功后自动加入「我喜欢的音乐」（默认开启）</label><p class="settings-help">仅对上传成功的歌曲执行；云盘与喜欢是两个独立步骤。网易云可能无法正常播放某些云盘歌曲。切换选项不会删除现有收藏。</p><button id="save-like-settings" type="button" class="outline-btn">保存自动喜欢设置</button></div></div><div class="settings-card"><div class="settings-icon">♫</div><div class="settings-main"><h3>Jamendo API <small id="jamendo-dot">· 可选</small></h3><p>添加你自己的 Jamendo Client ID 后，启用 Jamendo 免费音源检索。申请入口：<a href="https://developer.jamendo.com/" target="_blank" rel="noreferrer">developer.jamendo.com ↗</a></p><div class="settings-control"><input id="jamendo-key" type="text" placeholder="粘贴 Jamendo Client ID" autocomplete="off" /><button id="save-settings" type="button" class="primary-btn">保存设置</button></div><small>Client ID 保存在此电脑 data/settings.json，非网易云账号凭据。</small></div></div><div class="settings-card"><div class="settings-icon">↗</div><div class="settings-main"><h3>B站搜索说明</h3><p>本工具会尝试调用 B站的公开搜索接口获取标题、UP主、版本等视频信息；接口若限制自动请求，可通过顶部 B站搜索入口在官方页面继续查看。用户确认有下载权时可使用 yt-dlp 与 FFmpeg 提取 MP3，不使用你的 B站 Cookie，不处理受访问限制的内容。</p><p>如果其它音源提示 <code>fetch failed</code>，优先检查本机 Node.js 到对应平台的网络和代理设置。即使修好网络，开放许可音源也未必包含商业流行歌曲。</p></div></div><div class="settings-card"><div class="settings-icon">⛨</div><div class="settings-main"><h3>关于音频来源</h3><p>工具只接入具有公开下载方式的音频来源。使用前请确认具体文件许可要求（署名、商业用途限制等）。搜不到某首商业歌曲属于正常情况，并不代表程序故障。</p></div></div><div class="settings-card"><div class="settings-icon">⚙</div><div class="settings-main"><h3>本地存储位置</h3><p>下载文件：项目目录下 <code>data/tracks/</code><br>音乐库索引：<code>data/library.json</code><br>所有服务仅绑定 <code>127.0.0.1</code>，不会公开到局域网。</p></div></div></div>
+    </main>
+    <aside class="rightbar"><div class="right-header"><div><div class="eyebrow">SYNC CENTER</div><h2>同步中心</h2></div><span class="pulse-icon">⇅</span></div><div class="sync-card"><div class="sync-card-head"><span>☁</span> 网易云音乐云盘</div><div class="sync-state"><span class="online-dot off" id="sync-dot"></span><strong id="sync-label">等待连接</strong></div><p id="sync-description">连接你的网易云音乐账号，上传音乐后即可在其他设备上收听。</p><button class="full-ghost" id="sync-connect" type="button">连接网易云账号 <span>↗</span></button></div><div class="right-title"><span>传输任务</span><span class="queue-count" id="queue-count">0</span></div><div id="queue-items" class="queue-items"><div class="queue-empty"><span>↓</span>搜索或导入音乐后，<br>任务进度会显示在这里。</div></div><div class="right-footer"><div class="mini-check">✓</div><div><strong>只在本机处理音频</strong><span>登录加密保存，下次自动恢复</span></div></div></aside>
+  </div>
+  <dialog id="import-modal" class="import-dialog" aria-labelledby="import-title" aria-describedby="import-description">
+    <header class="import-header"><div><h2 id="import-title">确认导入网易云</h2><p id="import-description">核对歌曲信息，确认后开始下载和上传。</p></div><button id="import-close" class="close-modal" type="button" aria-label="关闭导入窗口">✕</button></header>
+    <div class="import-body"><section class="import-source"><h3>所选音源</h3><p id="selected-description"></p><p id="selected-reasons"></p></section>
+    <div class="import-track"><div id="selected-cover" class="selected-cover"></div><div class="metadata-fields"><label>歌曲名<input id="selected-title" maxlength="100" autocomplete="off"></label><label>实际演唱者<input id="selected-artist" maxlength="80" autocomplete="off" placeholder="请核对实际演唱者"></label><label>专辑（可选）<input id="selected-album" maxlength="100" autocomplete="off"></label></div></div>
+    <p id="selection-recognition" class="import-recognition" role="status"></p><div id="selection-candidates" class="metadata-suggestions"></div>
+    <section class="import-destination"><h3>导入到</h3><p id="import-account"></p><button id="import-connect" type="button" class="outline-btn hidden">连接网易云账号</button><p id="import-outcome">保存到本地音乐库并上传网易云云盘。</p></section>
+    <label class="permission-choice"><input id="source-rights" type="checkbox">我确认有权保存和上传这个音源</label><p id="import-error" class="metadata-warning" role="alert"></p></div>
+    <footer class="import-footer"><button id="import-cancel" type="button" class="outline-btn">暂不导入</button><button id="ingest-selected" class="primary-btn" type="button">确认导入</button></footer>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div class="modal-overlay hidden" id="metadata-modal" role="dialog" aria-modal="true" aria-labelledby="metadata-modal-title">
+    <div class="qr-modal metadata-modal">
+      <button type="button" id="metadata-close" class="close-modal" aria-label="关闭">✕</button>
+      <div class="eyebrow">TRACK METADATA</div><h2 id="metadata-modal-title">确认歌曲信息</h2>
+      <p>请核对原唱与版本。保存时会把歌曲信息和选中的专辑封面写入 MP3 标签；已上传的云盘文件不会被远程改写。</p>
+      <div class="metadata-fields"><label>歌曲名<input id="meta-title" type="text" maxlength="100" placeholder="例如：稻香" /></label>
+      <label>歌手<input id="meta-artist" type="text" maxlength="80" placeholder="例如：周杰伦" /></label>
+      <label>专辑<input id="meta-album" type="text" maxlength="100" placeholder="例如：魔杰座（可选）" /></label></div>
+      <div class="cover-picker"><div class="cover-preview" id="meta-cover-preview">♫</div><div class="cover-controls"><strong>专辑封面</strong><span id="meta-cover-status">可从 Apple / 网易云曲库选择，也可上传 JPG / PNG</span><label class="outline-btn cover-file-label" for="meta-cover-file">上传本地封面</label><input id="meta-cover-file" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden/><button id="meta-cover-clear" type="button" class="text-btn">清除待选封面</button></div></div><div class="metadata-search"><button id="meta-suggest" type="button" class="outline-btn">⌕ 搜索标准歌曲信息</button><small>候选信息来自 Apple / 网易云曲库；须由你确认，不会自动覆盖。</small></div>
+      <div id="meta-suggestions" class="metadata-suggestions"></div><div id="meta-notice" class="metadata-warning"></div>
+      <div class="metadata-actions"><button id="meta-save" type="button" class="primary-btn">保存歌曲信息</button><button id="meta-save-upload" type="button" class="outline-btn">保存并上传云盘</button></div>
+    </div>
+  </div>
+  <section class="player-dock hidden" id="player-modal" role="region" aria-label="全局试听播放器">
+    <div class="player-dialog"><button type="button" id="player-close" class="close-modal" aria-label="关闭播放器">✕</button>
+      <div class="player-actions"><button id="player-previous" class="outline-btn" type="button">上一候选</button><button id="player-next" class="outline-btn" type="button">下一候选</button><button id="player-select-source" class="outline-btn" type="button">选择当前音源</button><button id="player-expand" class="outline-btn" type="button">收起详情</button></div><h2 id="player-title">站内试听</h2><p id="player-detail">B站官方播放器 / 本地音频</p>
+      <div id="player-stage" class="player-stage"></div>
+      <p id="player-note" class="player-note">若 B站限制第三方嵌入播放，请在官方页面播放。</p>
+      <a id="player-fallback" class="outline-btn hidden" target="_blank" rel="noopener noreferrer">在来源网站观看 ↗</a>
+    </div>
+  </section>
+  <div class="modal-overlay hidden" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title"><div class="qr-modal"><button id="qr-close" type="button" class="close-modal" aria-label="关闭">✕</button><div class="eyebrow">CONNECT YOUR CLOUD</div><h2 id="qr-title">扫码连接网易云音乐</h2><p>打开网易云音乐 App，扫描下方二维码并在手机确认</p><div class="qr-box" id="qr-box"><div class="spinner"></div></div><div id="qr-status" class="qr-status">正在获取二维码…</div><button type="button" id="qr-retry" class="outline-btn hidden">重新生成二维码</button><small>CloudTune 不保存你的密码；登录凭证由 Windows 加密保存，下次启动自动恢复。</small></div></div>
+</body>
+</html>
+
+
